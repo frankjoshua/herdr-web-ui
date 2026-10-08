@@ -7,13 +7,13 @@ import type { AgentStatus, PlanSummary } from "../../shared/protocol.ts";
 import { useT } from "../lib/i18n.ts";
 import { agentContext, agentTabName, groupRows, paneMark, sidebarAgents, type SidebarAgent } from "../lib/sidebarAgents.ts";
 import { useSidebarLayout } from "../lib/sidebarLayout.ts";
-import { metadataLines } from "../lib/sidebarMetadata.ts";
+import { metadataLines, type MetadataValue } from "../lib/sidebarMetadata.ts";
 import { useSettings } from "../lib/settings.ts";
 import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { activityOrder } from "../lib/sidebarOrder.ts";
 import { currentSidebarPins, pruneSidebarPins, setSidebarPins, sidebarPinKey, splitPinnedRows, subscribeSidebarPins, toggleSidebarPin } from "../lib/sidebarPins.ts";
 import { AgentMark, hasAgentMark } from "./AgentMark.tsx";
-import { BackgroundBadge, displayPaneTitle, PlanBadge, StatusBadge } from "./Sidebar.tsx";
+import { BackgroundBadge, displayPaneTitle, MetadataLines, PlanBadge, StatusBadge } from "./Sidebar.tsx";
 import "./AgentSidebar.css";
 
 interface AgentRowBodyProps {
@@ -26,7 +26,7 @@ interface AgentRowBodyProps {
   name: string | null;
   context: string;
   /** the agent's reported metadata, one line per row of the user's herdr layout */
-  metadata: readonly string[];
+  metadata: readonly (readonly MetadataValue[])[];
   backgroundTasks?: number;
   plan?: PlanSummary;
   status?: AgentStatus;
@@ -47,7 +47,7 @@ function AgentRowBody({ mark, markKind, title, name, context, metadata, backgrou
         {name && context && " · "}
         {context}
       </span>}
-      {metadata.map((line, index) => <span className="sidebar-metadata" key={index}>{line}</span>)}
+      <MetadataLines lines={metadata} />
     </span>
     <span className="agent-row-status"><BackgroundBadge count={backgroundTasks} /><PlanBadge plan={plan} /><StatusBadge status={status} compact /></span>
   </>;
