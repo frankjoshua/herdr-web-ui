@@ -26,6 +26,9 @@ between releases do not reach them. Remote-PC runtime bundles are versioned sepa
   `HERDR_WEB_TELEMETRY=0` or `DO_NOT_TRACK=1` turns it off on the server.
   ([Anonymous usage counts](docs/guide.md#anonymous-usage-counts),
   [#599](https://github.com/devswha/herdr-web-ui/pull/599))
+- A workspace row shows the metadata herdr's own sidebar shows for it, such as a merge request's
+  state and number or a review asked for, on a line under its name, Nerd Font icons included.
+  These are the values a script reports to herdr (`workspace.report_metadata`).
 
 ### Changed
 - The default mobile terminal key bar puts Esc, Tab and Ctrl+C first, before the held modifiers

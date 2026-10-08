@@ -241,6 +241,24 @@ button.sidebar-section-label:focus-visible { outline-offset: calc(var(--ring-off
   white-space: nowrap;
 }
 
+/* herdr's reported workspace metadata (Sidebar.tsx `reported`): the mono stack leads with the
+   bundled Symbols Nerd Font Mono, which draws the icons the values carry */
+.workspace-header.has-tokens {
+  min-height: var(--side-row-2);
+  padding-block: var(--space-1);
+}
+
+.workspace-tokens {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-tight);
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+
 /* a worktree workspace's own name follows its branch on the same line, and gives way first */
 .worktree-workspace-label {
   flex: 1 1 0;

@@ -493,6 +493,15 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
     const lines = twoLine ? taskRowLines({ paneTitle: displayPaneTitle(pane), labelled: Boolean(pane.label?.trim()), folder: cwdBasename(pane.cwd), workspace: rowTitle, alias: secondaryBranch }) : null;
     // a folded group still shows the checkout that is open; the count is of the ones put away
     const foldedCount = collapsed ? children.filter((child) => !roster.some((candidate) => candidate.workspace_id === child.workspace_id && candidate.pane_id === selectedPaneId)).length : 0;
+    // what herdr's own sidebar shows for the workspace from its reported metadata (an MR's state and
+    // number, a review asked for), sorted by name: herdr sends the values in no fixed order, and a row
+    // would reorder itself between snapshots. The icons are Nerd Font glyphs.
+    const reported = Object.entries(workspace.tokens ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value).filter((value): value is string => typeof value === "string" && value.trim() !== "").join("  ");
+    const oneLineName = <>
+      <span className="workspace-name">{rowTitle}</span>
+      {secondaryBranch && <span className="worktree-workspace-label">{secondaryBranch}</span>}
+      {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
+    </>;
     const editingWorkspace = editingWorkspaceId === workspace.workspace_id;
     const editingPane = editingPaneId === pane.pane_id;
     const menuOpen = menu?.workspace.workspace_id === workspace.workspace_id;
@@ -506,7 +515,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
       onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
       onDrop={(event) => onDrop(event, workspace.workspace_id)}
     >
-      <div className="workspace-header" onContextMenu={(event) => onRowContextMenu(event, toggleMenu)}>
+      <div className={`workspace-header${reported ? " has-tokens" : ""}`} onContextMenu={(event) => onRowContextMenu(event, toggleMenu)}>
         {/* a workspace leads with its folder, which is the fold when linked worktrees sit under it */}
         {nested ? null : children.length > 0 && repoKey !== undefined ? <button
           type="button"
@@ -574,11 +583,11 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
               {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
             </span>
             {lines.place && <span className="workspace-place">{lines.place}</span>}
-          </span> : <span className="workspace-copy">
-            <span className="workspace-name">{rowTitle}</span>
-            {secondaryBranch && <span className="worktree-workspace-label">{secondaryBranch}</span>}
-            {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
-          </span>}
+            {reported && <span className="workspace-tokens">{reported}</span>}
+          </span> : reported ? <span className="workspace-copy is-two-line">
+            <span className="workspace-line">{oneLineName}</span>
+            <span className="workspace-tokens">{reported}</span>
+          </span> : <span className="workspace-copy">{oneLineName}</span>}
           <span className="sidebar-pane-meta">
             <span className="visually-hidden">{markName(pane)}</span>
             {online && pane.restore_error ? <RestoreErrorBadge reason={pane.restore_error} /> : <StatusBadge compact status={online ? rollupStatus(statusPanes.map((candidate) => activity.status(machineId, candidate))) : undefined} />}
