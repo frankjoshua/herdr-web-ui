@@ -4,7 +4,7 @@ import { chmodSync, mkdtempSync, existsSync, readFileSync, realpathSync, rmSync,
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { createServer } from "./index.ts";
-import type { AgentKind, AgentStatus, ApiError, HealthAuth, PushKey, RemoteAccess, SessionSnapshot, PaneReadResult, UsageReport, WorkspaceCreated, WorktreeListing, WorktreeOpened, WorktreeRemoved } from "../shared/protocol.ts";
+import type { AgentKind, AgentStatus, ApiError, HealthAuth, PushKey, RemoteAccess, SessionSnapshot, PaneReadResult, SidebarLayout, UsageReport, WorkspaceCreated, WorktreeListing, WorktreeOpened, WorktreeRemoved } from "../shared/protocol.ts";
 import { HerdrUpdater } from "./herdr-update.ts";
 import { noInstalledNotes, unmanagedUpdateStatus, type HerdrUpdateStatus, type InstalledNotes, type UpdateNotes } from "../shared/update.ts";
 import { USAGE_PROVIDERS, UsageService } from "./usage.ts";
@@ -119,6 +119,27 @@ describe("usage API", () => {
       const withToken = await fetch(`http://localhost:${gated.port}/api/usage`, { headers: { authorization: "Bearer test-usage-token" } });
       expect(withToken.status).toBe(200);
     } finally { open.stop(); gated.stop(); rmSync(usageState, { recursive: true, force: true }); }
+  });
+});
+
+describe("sidebar layout API", () => {
+  it("answers the custom rows of herdr's config, and herdr's default without one, behind the token gate", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "herdr-sidebar-layout-"));
+    const config = join(dir, "config.toml");
+    writeFileSync(config, `[ui.sidebar.spaces]\nrows = [["state_icon", "workspace"], [{ token = "$ci", fg = "#f55", rules = [{ equals = "passing", hide = true }] }]]\n`);
+    const open = createServer({ port: 0, stateDir: dir, herdrConfig: config });
+    const missing = createServer({ port: 0, stateDir: dir, herdrConfig: join(dir, "absent.toml") });
+    const gated = createServer({ port: 0, stateDir: dir, herdrConfig: config, token: "test-layout-token" });
+    try {
+      const answered = await fetch(`http://localhost:${open.port}/api/sidebar-layout`);
+      expect(answered.status).toBe(200);
+      expect(answered.headers.get("cache-control")).toBe("no-store");
+      expect(await answered.json() as SidebarLayout).toEqual({ spaces: [[{ value: "ci", rules: [{ equals: "passing", hide: true }] }]], agents: [], agents_by_agent: {} });
+      expect(await (await fetch(`http://localhost:${missing.port}/api/sidebar-layout`)).json() as SidebarLayout).toEqual({ spaces: [], agents: [], agents_by_agent: {} });
+      expect((await fetch(`http://localhost:${open.port}/api/sidebar-layout`, { method: "POST", headers: { origin: `http://localhost:${open.port}` } })).status).toBe(405);
+      expect((await fetch(`http://localhost:${gated.port}/api/sidebar-layout`)).status).toBe(401);
+      expect((await fetch(`http://localhost:${gated.port}/api/sidebar-layout`, { headers: { authorization: "Bearer test-layout-token" } })).status).toBe(200);
+    } finally { open.stop(); missing.stop(); gated.stop(); rmSync(dir, { recursive: true, force: true }); }
   });
 });
 

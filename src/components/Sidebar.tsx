@@ -20,7 +20,8 @@ import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { useSettings } from "../lib/settings.ts";
 import { useWorktreeBranches } from "../lib/useWorktreeBranches.ts";
 import { worktreeLabel } from "../lib/worktreeName.ts";
-import { workspaceMetadataLine } from "../lib/workspaceMetadata.ts";
+import { metadataLines } from "../lib/sidebarMetadata.ts";
+import { useSidebarLayout } from "../lib/sidebarLayout.ts";
 import { paneMark, sidebarAgents, workspaceAgentLabels } from "../lib/sidebarAgents.ts";
 
 const ERROR_NOTE_MS = 5000;
@@ -135,6 +136,8 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
   const t = useT();
   const { settings } = useSettings();
   const twoLine = settings.sidebarRows === "two";
+  // the metadata lines herdr's sidebar draws for a workspace, under the user's herdr layout
+  const layout = useSidebarLayout();
   const machineId = useMachineId();
   // a DONE looked at here reads as ready with Quiet opened finishes on (lib/sidebarActivity.tsx)
   const activity = useSidebarActivity();
@@ -494,7 +497,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
     const lines = twoLine ? taskRowLines({ paneTitle: displayPaneTitle(pane), labelled: Boolean(pane.label?.trim()), folder: cwdBasename(pane.cwd), workspace: rowTitle, alias: secondaryBranch }) : null;
     // a folded group still shows the checkout that is open; the count is of the ones put away
     const foldedCount = collapsed ? children.filter((child) => !roster.some((candidate) => candidate.workspace_id === child.workspace_id && candidate.pane_id === selectedPaneId)).length : 0;
-    const reported = workspaceMetadataLine(workspace.tokens);
+    const metadata = metadataLines(layout.spaces, workspace.tokens).map((line, index) => <span className="sidebar-metadata" key={index}>{line}</span>);
     const oneLineName = <>
       <span className="workspace-name">{rowTitle}</span>
       {secondaryBranch && <span className="worktree-workspace-label">{secondaryBranch}</span>}
@@ -513,7 +516,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
       onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
       onDrop={(event) => onDrop(event, workspace.workspace_id)}
     >
-      <div className={`workspace-header${reported ? " has-tokens" : ""}`} onContextMenu={(event) => onRowContextMenu(event, toggleMenu)}>
+      <div className={`workspace-header${metadata.length > 0 ? " has-metadata" : ""}`} onContextMenu={(event) => onRowContextMenu(event, toggleMenu)}>
         {/* a workspace leads with its folder, which is the fold when linked worktrees sit under it */}
         {nested ? null : children.length > 0 && repoKey !== undefined ? <button
           type="button"
@@ -581,10 +584,10 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
               {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
             </span>
             {lines.place && <span className="workspace-place">{lines.place}</span>}
-            {reported && <span className="workspace-tokens">{reported}</span>}
-          </span> : reported ? <span className="workspace-copy is-two-line">
+            {metadata}
+          </span> : metadata.length > 0 ? <span className="workspace-copy is-two-line">
             <span className="workspace-line">{oneLineName}</span>
-            <span className="workspace-tokens">{reported}</span>
+            {metadata}
           </span> : <span className="workspace-copy">{oneLineName}</span>}
           <span className="sidebar-pane-meta">
             <span className="visually-hidden">{markName(pane)}</span>

@@ -26,9 +26,12 @@ between releases do not reach them. Remote-PC runtime bundles are versioned sepa
   `HERDR_WEB_TELEMETRY=0` or `DO_NOT_TRACK=1` turns it off on the server.
   ([Anonymous usage counts](docs/guide.md#anonymous-usage-counts),
   [#599](https://github.com/devswha/herdr-web-ui/pull/599))
-- A workspace row shows the metadata herdr's own sidebar shows for it, such as a merge request's
-  state and number or a review asked for, on a line under its name, Nerd Font icons included.
-  These are the values a script reports to herdr (`workspace.report_metadata`).
+- Workspace and agent rows show the metadata plugins and scripts report to herdr
+  (`report-metadata`), laid out as your herdr sidebar lays it out: the `$name` values your
+  `[ui.sidebar.spaces]` and `[ui.sidebar.agents]` rows (and `rows_by_agent`) name, row by row and
+  in their order, joined with ` · `, and hidden where a `hide` rule matches. Nerd Font icons in the
+  values draw. Remote PCs' rows follow this PC's layout, as herdr's own client draws them. Colors,
+  bold and dim from the layout are not applied yet.
 
 ### Changed
 - The default mobile terminal key bar puts Esc, Tab and Ctrl+C first, before the held modifiers

@@ -193,6 +193,39 @@ export interface UsageReport {
   readonly providers: readonly ProviderUsage[];
 }
 
+/**
+ * One rule of a sidebar value (herdr's `rules`): exactly one condition. The first rule whose
+ * condition matches decides; `hide` removes the value. Text conditions are case-sensitive unless
+ * `ignore_case` (ASCII only); `gt`/`lt` need the whole value to be a finite number.
+ */
+export interface SidebarValueRule {
+  readonly equals?: string;
+  readonly contains?: string;
+  readonly starts_with?: string;
+  readonly ignore_case?: boolean;
+  readonly gt?: number;
+  readonly lt?: number;
+  readonly hide: boolean;
+}
+
+/** A `$name` entry of a herdr sidebar row: `value` is the metadata name, without the `$`. */
+export interface SidebarValue {
+  readonly value: string;
+  readonly rules: readonly SidebarValueRule[];
+}
+
+/**
+ * GET /api/sidebar-layout: the custom metadata rows of this PC's herdr `[ui.sidebar]` config, in
+ * their order, with the built-in tokens left out (the app draws its own names and states). Empty
+ * rows when herdr's config has none, as herdr's default layout shows no custom values.
+ */
+export interface SidebarLayout {
+  readonly spaces: readonly (readonly SidebarValue[])[];
+  readonly agents: readonly (readonly SidebarValue[])[];
+  /** herdr's `rows_by_agent`: a complete replacement of `agents` for that canonical agent id */
+  readonly agents_by_agent: Readonly<Record<string, readonly (readonly SidebarValue[])[]>>;
+}
+
 /** How a request got in, when it did. */
 export type AccessVia = "local" | "tailscale" | "device" | "token" | "open";
 /** Why a request did not. */

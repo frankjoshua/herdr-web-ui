@@ -6,6 +6,8 @@ import { paneStorageId } from "../../shared/machines.ts";
 import type { AgentStatus } from "../../shared/protocol.ts";
 import { useT } from "../lib/i18n.ts";
 import { agentContext, agentTabName, paneMark, sidebarAgents } from "../lib/sidebarAgents.ts";
+import { useSidebarLayout } from "../lib/sidebarLayout.ts";
+import { metadataLines } from "../lib/sidebarMetadata.ts";
 import { useSettings } from "../lib/settings.ts";
 import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { activityOrder } from "../lib/sidebarOrder.ts";
@@ -18,20 +20,23 @@ interface AgentRowBodyProps {
   mark: string | null;
   title: string;
   context: string;
+  /** the agent's reported metadata, one line per row of the user's herdr layout */
+  metadata: readonly string[];
   backgroundTasks?: number;
   status?: AgentStatus;
 }
 
 /**
- * One agent in a list: the coding agent's mark, what it is working on, who and where it is, and
- * how it is doing.
+ * One agent in a list: the coding agent's mark, what it is working on, who and where it is, what
+ * its reporters say about it, and how it is doing.
  */
-function AgentRowBody({ mark, title, context, backgroundTasks, status }: AgentRowBodyProps) {
+function AgentRowBody({ mark, title, context, metadata, backgroundTasks, status }: AgentRowBodyProps) {
   return <>
     <span className="sidebar-mark" aria-hidden="true">{mark !== null ? <AgentMark agent={mark} size={18} /> : <Terminal />}</span>
     <span className="agent-copy">
       <span className="agent-title">{title}</span>
       {context && <span className="agent-context">{context}</span>}
+      {metadata.map((line, index) => <span className="sidebar-metadata" key={index}>{line}</span>)}
     </span>
     <span className="agent-row-status"><BackgroundBadge count={backgroundTasks} /><StatusBadge status={status} compact /></span>
   </>;
@@ -59,6 +64,7 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
   const [collapsed, setCollapsed] = useState(() => window.matchMedia?.(DRAWER_QUERY).matches === true);
   const { settings } = useSettings();
   const activity = useSidebarActivity();
+  const layout = useSidebarLayout();
   // Settings → Agents order: herdr's order, or Activity within each PC (each herdr counts its own changes)
   const byActivity = settings.agentOrder === "activity";
   const rows = useMemo(() => machines.flatMap((machine) => {
@@ -82,10 +88,12 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
           const tabName = agentTabName(tab, tabs, t);
           const context = agentContext({ agentLabel, title, machineName: machines.length > 1 ? machine.name : null, workspaceLabel: workspace.label, tabName }).join(" · ");
           const tooltip = [...new Set([pane.pane_id, title, context, agent?.name, agent?.display_agent, pane.cwd, online ? null : stateWord(machine)].filter(Boolean))].join("\n");
+          // herdr's rows_by_agent replaces the agent rows for that agent kind
+          const metadata = metadataLines(pane.agent && Object.hasOwn(layout.agents_by_agent, pane.agent) ? layout.agents_by_agent[pane.agent]! : layout.agents, pane.tokens);
           return <li className={`agent-item${selected ? " is-selected" : ""}${online ? "" : " is-offline"}`} key={paneStorageId(machine.id, pane.pane_id)} data-machine={machine.id} data-pane={pane.pane_id}>
-            <button type="button" className="agent-select agent-row" disabled={!online} aria-current={selected ? "true" : undefined} title={tooltip} onClick={() => onSelect(machine.id, pane.pane_id)}>
+            <button type="button" className={`agent-select agent-row${metadata.length > 0 ? " has-metadata" : ""}`} disabled={!online} aria-current={selected ? "true" : undefined} title={tooltip} onClick={() => onSelect(machine.id, pane.pane_id)}>
               {/* a saved roster's state is not news: a PC that is away says nothing about its agents */}
-              <AgentRowBody mark={paneMark(entry)} title={title} context={context} backgroundTasks={online ? pane.background_tasks : 0} status={online ? activity.status(machine.id, pane) : undefined} />
+              <AgentRowBody mark={paneMark(entry)} title={title} context={context} metadata={metadata} backgroundTasks={online ? pane.background_tasks : 0} status={online ? activity.status(machine.id, pane) : undefined} />
             </button>
           </li>;
         })}

@@ -19,6 +19,7 @@ import type {
   RemoteAccess,
   RemoveWorktreeRequest,
   SessionSnapshot,
+  SidebarLayout,
   SlashCommand,
   TabCreated,
   UsageReport,
@@ -43,6 +44,11 @@ export function fetchRemoteAccess(): Promise<RemoteAccess> {
 /** The sidebar's plan meters; `refresh` asks the providers again instead of the server's recent answer. */
 export function fetchUsage(refresh = false): Promise<UsageReport> {
   return getJson<UsageReport>(refresh ? "/api/usage?refresh=1" : "/api/usage");
+}
+
+/** The custom metadata rows of the server's herdr sidebar config; every PC's rows use them. */
+export function fetchSidebarLayout(): Promise<SidebarLayout> {
+  return getJson<SidebarLayout>("/api/sidebar-layout");
 }
 
 export function fetchUpdateStatus(): Promise<UpdateStatus> {

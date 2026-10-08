@@ -93,6 +93,7 @@
 
 .agent-row:focus-visible { outline-offset: calc(var(--ring-offset) * -1); }
 .agent-row:disabled { cursor: default; }
+.agent-row.has-metadata { padding-block: var(--space-1); }
 
 @media (hover: hover) {
   .agent-row:enabled:hover { background: var(--side-hover); }
