@@ -20,6 +20,7 @@ import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { useSettings } from "../lib/settings.ts";
 import { useWorktreeBranches } from "../lib/useWorktreeBranches.ts";
 import { worktreeLabel } from "../lib/worktreeName.ts";
+import { workspaceMetadataLine } from "../lib/workspaceMetadata.ts";
 import { paneMark, sidebarAgents, workspaceAgentLabels } from "../lib/sidebarAgents.ts";
 
 const ERROR_NOTE_MS = 5000;
@@ -493,10 +494,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
     const lines = twoLine ? taskRowLines({ paneTitle: displayPaneTitle(pane), labelled: Boolean(pane.label?.trim()), folder: cwdBasename(pane.cwd), workspace: rowTitle, alias: secondaryBranch }) : null;
     // a folded group still shows the checkout that is open; the count is of the ones put away
     const foldedCount = collapsed ? children.filter((child) => !roster.some((candidate) => candidate.workspace_id === child.workspace_id && candidate.pane_id === selectedPaneId)).length : 0;
-    // what herdr's own sidebar shows for the workspace from its reported metadata (an MR's state and
-    // number, a review asked for), sorted by name: herdr sends the values in no fixed order, and a row
-    // would reorder itself between snapshots. The icons are Nerd Font glyphs.
-    const reported = Object.entries(workspace.tokens ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value).filter((value): value is string => typeof value === "string" && value.trim() !== "").join("  ");
+    const reported = workspaceMetadataLine(workspace.tokens);
     const oneLineName = <>
       <span className="workspace-name">{rowTitle}</span>
       {secondaryBranch && <span className="worktree-workspace-label">{secondaryBranch}</span>}
