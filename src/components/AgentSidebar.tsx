@@ -88,8 +88,9 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
           const tabName = agentTabName(tab, tabs, t);
           const context = agentContext({ agentLabel, title, machineName: machines.length > 1 ? machine.name : null, workspaceLabel: workspace.label, tabName }).join(" · ");
           const tooltip = [...new Set([pane.pane_id, title, context, agent?.name, agent?.display_agent, pane.cwd, online ? null : stateWord(machine)].filter(Boolean))].join("\n");
-          // herdr's rows_by_agent replaces the agent rows for that agent kind
-          const metadata = metadataLines(pane.agent && Object.hasOwn(layout.agents_by_agent, pane.agent) ? layout.agents_by_agent[pane.agent]! : layout.agents, pane.tokens);
+          // herdr's rows_by_agent replaces the agent rows for that canonical agent id
+          const kind = entry.canonicalAgent;
+          const metadata = metadataLines(kind && Object.hasOwn(layout.agents_by_agent, kind) ? layout.agents_by_agent[kind]! : layout.agents, pane.tokens);
           return <li className={`agent-item${selected ? " is-selected" : ""}${online ? "" : " is-offline"}`} key={paneStorageId(machine.id, pane.pane_id)} data-machine={machine.id} data-pane={pane.pane_id}>
             <button type="button" className={`agent-select agent-row${metadata.length > 0 ? " has-metadata" : ""}`} disabled={!online} aria-current={selected ? "true" : undefined} title={tooltip} onClick={() => onSelect(machine.id, pane.pane_id)}>
               {/* a saved roster's state is not news: a PC that is away says nothing about its agents */}
