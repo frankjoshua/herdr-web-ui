@@ -7,12 +7,12 @@ import type { AgentStatus } from "../../shared/protocol.ts";
 import { useT } from "../lib/i18n.ts";
 import { agentContext, agentTabName, paneMark, sidebarAgents } from "../lib/sidebarAgents.ts";
 import { useSidebarLayout } from "../lib/sidebarLayout.ts";
-import { metadataLines } from "../lib/sidebarMetadata.ts";
+import { metadataLines, type MetadataValue } from "../lib/sidebarMetadata.ts";
 import { useSettings } from "../lib/settings.ts";
 import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { activityOrder } from "../lib/sidebarOrder.ts";
 import { AgentMark } from "./AgentMark.tsx";
-import { BackgroundBadge, displayPaneTitle, StatusBadge } from "./Sidebar.tsx";
+import { BackgroundBadge, displayPaneTitle, MetadataLines, StatusBadge } from "./Sidebar.tsx";
 import "./AgentSidebar.css";
 
 interface AgentRowBodyProps {
@@ -21,7 +21,7 @@ interface AgentRowBodyProps {
   title: string;
   context: string;
   /** the agent's reported metadata, one line per row of the user's herdr layout */
-  metadata: readonly string[];
+  metadata: readonly (readonly MetadataValue[])[];
   backgroundTasks?: number;
   status?: AgentStatus;
 }
@@ -36,7 +36,7 @@ function AgentRowBody({ mark, title, context, metadata, backgroundTasks, status 
     <span className="agent-copy">
       <span className="agent-title">{title}</span>
       {context && <span className="agent-context">{context}</span>}
-      {metadata.map((line, index) => <span className="sidebar-metadata" key={index}>{line}</span>)}
+      <MetadataLines lines={metadata} />
     </span>
     <span className="agent-row-status"><BackgroundBadge count={backgroundTasks} /><StatusBadge status={status} compact /></span>
   </>;

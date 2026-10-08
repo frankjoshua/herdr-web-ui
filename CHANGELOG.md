@@ -30,8 +30,10 @@ between releases do not reach them. Remote-PC runtime bundles are versioned sepa
   (`report-metadata`), laid out as your herdr sidebar lays it out: the `$name` values your
   `[ui.sidebar.spaces]` and `[ui.sidebar.agents]` rows (and `rows_by_agent`) name, row by row and
   in their order, joined with ` · `, and hidden where a `hide` rule matches. Nerd Font icons in the
-  values draw. Remote PCs' rows follow this PC's layout, as herdr's own client draws them. Colors,
-  bold and dim from the layout are not applied yet.
+  values draw. Remote PCs' rows follow this PC's layout, as herdr's own client draws them.
+- Those values take the colors, bold and dim your herdr layout gives them, including the style a
+  matching rule sets (red for a failed pipeline, say). The colors come from your terminal setup:
+  on the light theme they are mixed toward the text color so they stay readable.
 
 ### Changed
 - The default mobile terminal key bar puts Esc, Tab and Ctrl+C first, before the held modifiers

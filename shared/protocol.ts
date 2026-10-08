@@ -194,11 +194,22 @@ export interface UsageReport {
 }
 
 /**
- * One rule of a sidebar value (herdr's `rules`): exactly one condition. The first rule whose
- * condition matches decides; `hide` removes the value. Text conditions are case-sensitive unless
- * `ignore_case` (ASCII only); `gt`/`lt` need the whole value to be a finite number.
+ * A sidebar value's style as herdr's layout sets it. An absent field keeps the row's own look;
+ * `false` removes that modifier. `fg` is `#RGB` or `#RRGGBB`, as herdr accepts it.
  */
-export interface SidebarValueRule {
+export interface SidebarStyle {
+  readonly fg?: string;
+  readonly bold?: boolean;
+  readonly dim?: boolean;
+}
+
+/**
+ * One rule of a sidebar value (herdr's `rules`): exactly one condition. The first rule whose
+ * condition matches decides: `hide` removes the value, and the style fields it sets override the
+ * value's own. Text conditions are case-sensitive unless `ignore_case` (ASCII only); `gt`/`lt` need
+ * the whole value to be a finite number.
+ */
+export interface SidebarValueRule extends SidebarStyle {
   readonly equals?: string;
   readonly contains?: string;
   readonly starts_with?: string;
@@ -209,7 +220,7 @@ export interface SidebarValueRule {
 }
 
 /** A `$name` entry of a herdr sidebar row: `value` is the metadata name, without the `$`. */
-export interface SidebarValue {
+export interface SidebarValue extends SidebarStyle {
   readonly value: string;
   readonly rules: readonly SidebarValueRule[];
 }

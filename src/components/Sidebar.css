@@ -260,6 +260,18 @@ button.sidebar-section-label:focus-visible { outline-offset: calc(var(--ring-off
   white-space: pre;
 }
 
+/* A value takes the style its herdr layout gives it. The line's own dim grey stands in for a
+   terminal's default, so `dim = false` lifts a value to the body text and `dim = true` fades a
+   colored one toward the panel. The colors come from a terminal theme, mostly a dark one: on the
+   light theme they are mixed toward the strongest text so they keep their hue and stay readable. */
+.metadata-value.is-undimmed { color: var(--text); }
+.metadata-value.has-fg { color: var(--metadata-fg); }
+.metadata-value.has-fg.is-dim { color: color-mix(in srgb, var(--metadata-fg) 60%, var(--bg-panel)); }
+.metadata-value.is-bold { font-weight: var(--fw-bold); }
+
+[data-theme="light"] .metadata-value.has-fg { color: color-mix(in oklab, var(--metadata-fg) 65%, var(--text-strong)); }
+[data-theme="light"] .metadata-value.has-fg.is-dim { color: color-mix(in oklab, var(--metadata-fg) 45%, var(--text-dim)); }
+
 /* a worktree workspace's own name follows its branch on the same line, and gives way first */
 .worktree-workspace-label {
   flex: 1 1 0;

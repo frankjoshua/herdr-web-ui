@@ -1,24 +1,30 @@
 import { expect, it } from "bun:test";
 import { parseSidebarLayout } from "./sidebar-layout.ts";
 
-it("keeps a row's custom values in order and leaves out herdr's built-in tokens", () => {
+it("keeps a row's custom values in order with their style, and leaves out herdr's built-in tokens", () => {
   const layout = parseSidebarLayout(`
 [ui.sidebar.spaces]
 rows = [
   ["state_icon", "workspace"],
   ["branch", "git_status"],
-  [{ token = "$mr_failed", fg = "#f85149", bold = true }, { token = "$mr_opened", fg = "#3fb950" }, { token = "$repo" }],
+  [{ token = "$mr_failed", fg = "#f85149", bold = true }, { token = "$mr_opened", fg = "#3fb950" }, { token = "$repo", dim = false }],
   [{ token = "$mr_review", fg = "#58a6ff" }],
   ["$plain", "workspace"],
 ]
 `);
   expect(layout.spaces).toEqual([
-    [{ value: "mr_failed", rules: [] }, { value: "mr_opened", rules: [] }, { value: "repo", rules: [] }],
-    [{ value: "mr_review", rules: [] }],
+    [{ value: "mr_failed", fg: "#f85149", bold: true, rules: [] }, { value: "mr_opened", fg: "#3fb950", rules: [] }, { value: "repo", dim: false, rules: [] }],
+    [{ value: "mr_review", fg: "#58a6ff", rules: [] }],
     [{ value: "plain", rules: [] }],
   ]);
   expect(layout.agents).toEqual([]);
   expect(layout.agents_by_agent).toEqual({});
+});
+
+it("takes only the colors herdr accepts", () => {
+  const fgs = ["#abc", "#A1B2C3", "#abcd", "red", "#ggg", "url(x)", "#1234567"];
+  const layout = parseSidebarLayout(`[ui.sidebar.spaces]\nrows = [[${fgs.map((fg, i) => `{ token = "$v${i}", fg = "${fg}" }`).join(", ")}]]\n`);
+  expect(layout.spaces[0]!.map((value) => value.fg)).toEqual(["#abc", "#A1B2C3", undefined, undefined, undefined, undefined, undefined]);
 });
 
 it("reads agent rows and the per-agent replacements", () => {
@@ -35,21 +41,23 @@ codex = [["$summary"]]
   expect(layout.agents_by_agent).toEqual({ claude: [], codex: [[{ value: "summary", rules: [] }]] });
 });
 
-it("keeps the rules that decide visibility, and drops the ones herdr would reject", () => {
+it("keeps the rules with what they change, and drops the ones herdr would reject", () => {
   const layout = parseSidebarLayout(`
 [ui.sidebar.spaces]
 rows = [[{ token = "$ci", fg = "#f55", rules = [
   { equals = "passing", hide = true },
-  { contains = "FAIL", ignore_case = true, fg = "#f00" },
-  { gt = 80, hide = true },
+  { contains = "FAIL", ignore_case = true, fg = "#f00", bold = true },
+  { gt = 80, dim = true },
+  { lt = 1 },
   { equals = "x", gt = 1 },
   { fg = "#fff" },
 ] }]]
 `);
-  expect(layout.spaces).toEqual([[{ value: "ci", rules: [
+  expect(layout.spaces).toEqual([[{ value: "ci", fg: "#f55", rules: [
     { equals: "passing", hide: true },
-    { contains: "FAIL", ignore_case: true, hide: false },
-    { gt: 80, hide: true },
+    { contains: "FAIL", ignore_case: true, fg: "#f00", bold: true, hide: false },
+    { gt: 80, dim: true, hide: false },
+    { lt: 1, hide: false },
   ] }]]);
 });
 

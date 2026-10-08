@@ -134,7 +134,7 @@ describe("sidebar layout API", () => {
       const answered = await fetch(`http://localhost:${open.port}/api/sidebar-layout`);
       expect(answered.status).toBe(200);
       expect(answered.headers.get("cache-control")).toBe("no-store");
-      expect(await answered.json() as SidebarLayout).toEqual({ spaces: [[{ value: "ci", rules: [{ equals: "passing", hide: true }] }]], agents: [], agents_by_agent: {} });
+      expect(await answered.json() as SidebarLayout).toEqual({ spaces: [[{ value: "ci", fg: "#f55", rules: [{ equals: "passing", hide: true }] }]], agents: [], agents_by_agent: {} });
       expect(await (await fetch(`http://localhost:${missing.port}/api/sidebar-layout`)).json() as SidebarLayout).toEqual({ spaces: [], agents: [], agents_by_agent: {} });
       expect((await fetch(`http://localhost:${open.port}/api/sidebar-layout`, { method: "POST", headers: { origin: `http://localhost:${open.port}` } })).status).toBe(405);
       expect((await fetch(`http://localhost:${gated.port}/api/sidebar-layout`)).status).toBe(401);

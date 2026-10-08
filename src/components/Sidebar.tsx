@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { Ellipsis, Folder, FolderOpen, GitBranch, Layers, LoaderCircle, Pencil, Plus, Terminal, Trash2, TriangleAlert, X } from "lucide-react";
 
 import "./Sidebar.css";
@@ -20,7 +20,7 @@ import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { useSettings } from "../lib/settings.ts";
 import { useWorktreeBranches } from "../lib/useWorktreeBranches.ts";
 import { worktreeLabel } from "../lib/worktreeName.ts";
-import { metadataLines } from "../lib/sidebarMetadata.ts";
+import { metadataLines, type MetadataValue } from "../lib/sidebarMetadata.ts";
 import { useSidebarLayout } from "../lib/sidebarLayout.ts";
 import { paneMark, sidebarAgents, workspaceAgentLabels } from "../lib/sidebarAgents.ts";
 
@@ -90,6 +90,23 @@ export function StatusBadge({ status, compact = false }: { status?: AgentStatus;
       <span className={compact ? "visually-hidden" : undefined}>{label}</span>
     </span>
   );
+}
+
+/**
+ * Reported metadata as the user's herdr layout draws it: one line per layout row, its values
+ * joined with herdr's ` · `, each in its own color, weight and dimness. Separators keep the line's
+ * own look, as herdr's do.
+ */
+export function MetadataLines({ lines }: { lines: readonly (readonly MetadataValue[])[] }) {
+  return lines.map((line, row) => <span className="sidebar-metadata" key={row}>
+    {line.map((shown, index) => <Fragment key={index}>
+      {index > 0 && <span className="metadata-separator"> · </span>}
+      <span
+        className={`metadata-value${shown.fg ? " has-fg" : ""}${shown.bold === true ? " is-bold" : ""}${shown.dim === true ? " is-dim" : shown.dim === false ? " is-undimmed" : ""}`}
+        style={shown.fg ? { "--metadata-fg": shown.fg } as CSSProperties : undefined}
+      >{shown.text}</span>
+    </Fragment>)}
+  </span>);
 }
 
 /**
@@ -497,7 +514,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
     const lines = twoLine ? taskRowLines({ paneTitle: displayPaneTitle(pane), labelled: Boolean(pane.label?.trim()), folder: cwdBasename(pane.cwd), workspace: rowTitle, alias: secondaryBranch }) : null;
     // a folded group still shows the checkout that is open; the count is of the ones put away
     const foldedCount = collapsed ? children.filter((child) => !roster.some((candidate) => candidate.workspace_id === child.workspace_id && candidate.pane_id === selectedPaneId)).length : 0;
-    const metadata = metadataLines(layout.spaces, workspace.tokens).map((line, index) => <span className="sidebar-metadata" key={index}>{line}</span>);
+    const metadata = metadataLines(layout.spaces, workspace.tokens);
     const oneLineName = <>
       <span className="workspace-name">{rowTitle}</span>
       {secondaryBranch && <span className="worktree-workspace-label">{secondaryBranch}</span>}
@@ -584,10 +601,10 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
               {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
             </span>
             {lines.place && <span className="workspace-place">{lines.place}</span>}
-            {metadata}
+            <MetadataLines lines={metadata} />
           </span> : metadata.length > 0 ? <span className="workspace-copy is-two-line">
             <span className="workspace-line">{oneLineName}</span>
-            {metadata}
+            <MetadataLines lines={metadata} />
           </span> : <span className="workspace-copy">{oneLineName}</span>}
           <span className="sidebar-pane-meta">
             <span className="visually-hidden">{markName(pane)}</span>
