@@ -6,6 +6,8 @@ import { paneStorageId } from "../../shared/machines.ts";
 import type { AgentStatus, PlanSummary } from "../../shared/protocol.ts";
 import { useT } from "../lib/i18n.ts";
 import { agentContext, agentTabName, groupRows, paneMark, sidebarAgents, type SidebarAgent } from "../lib/sidebarAgents.ts";
+import { useSidebarLayout } from "../lib/sidebarLayout.ts";
+import { metadataLines } from "../lib/sidebarMetadata.ts";
 import { useSettings } from "../lib/settings.ts";
 import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { activityOrder } from "../lib/sidebarOrder.ts";
@@ -23,16 +25,18 @@ interface AgentRowBodyProps {
   /** the live name other tools address the agent by, when it has one */
   name: string | null;
   context: string;
+  /** the agent's reported metadata, one line per row of the user's herdr layout */
+  metadata: readonly string[];
   backgroundTasks?: number;
   plan?: PlanSummary;
   status?: AgentStatus;
 }
 
 /**
- * One agent in a list: the coding agent's mark, what it is working on, who and where it is, and
- * how it is doing.
+ * One agent in a list: the coding agent's mark, what it is working on, who and where it is, what
+ * its reporters say about it, and how it is doing.
  */
-function AgentRowBody({ mark, markKind, title, name, context, backgroundTasks, plan, status }: AgentRowBodyProps) {
+function AgentRowBody({ mark, markKind, title, name, context, metadata, backgroundTasks, plan, status }: AgentRowBodyProps) {
   return <>
     <span className="sidebar-mark" aria-hidden="true">{mark !== null ? <AgentMark agent={mark} size={18} /> : <Terminal />}</span>
     <span className="agent-copy">
@@ -43,6 +47,7 @@ function AgentRowBody({ mark, markKind, title, name, context, backgroundTasks, p
         {name && context && " · "}
         {context}
       </span>}
+      {metadata.map((line, index) => <span className="sidebar-metadata" key={index}>{line}</span>)}
     </span>
     <span className="agent-row-status"><BackgroundBadge count={backgroundTasks} /><PlanBadge plan={plan} /><StatusBadge status={status} compact /></span>
   </>;
@@ -80,6 +85,7 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
   // shared with the other browsers of this server (lib/preferencesSync.ts)
   const pinned = useSyncExternalStore(subscribeSidebarPins, currentSidebarPins, currentSidebarPins);
   const activity = useSidebarActivity();
+  const layout = useSidebarLayout();
   // Settings → Agents order: herdr's order, or Activity within each PC (each herdr counts its own changes)
   const byActivity = settings.agentOrder === "activity";
   const rows = useMemo(() => machines.flatMap((machine) => {
@@ -132,10 +138,13 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
     const tooltip = [...new Set([pane.pane_id, title, place, markKind, name, agent?.display_agent, pane.cwd, online ? null : stateWord(machine)].filter(Boolean))].join("\n");
     const pinKey = sidebarPinKey(machine.id, pane.pane_id);
     const isPinned = pinned.includes(pinKey);
+    // herdr's rows_by_agent replaces the agent rows for that canonical agent id
+    const agentId = entry.canonicalAgent;
+    const metadata = metadataLines(agentId && Object.hasOwn(layout.agents_by_agent, agentId) ? layout.agents_by_agent[agentId]! : layout.agents, pane.tokens);
     return <li className={`agent-item${selected ? " is-selected" : ""}${online ? "" : " is-offline"}`} key={paneStorageId(machine.id, pane.pane_id)} data-machine={machine.id} data-pane={pane.pane_id}>
-      <button type="button" className="agent-select agent-row" disabled={!online} aria-current={selected ? "true" : undefined} title={tooltip} onClick={() => onSelect(machine.id, pane.pane_id)}>
+      <button type="button" className={`agent-select agent-row${metadata.length > 0 ? " has-metadata" : ""}`} disabled={!online} aria-current={selected ? "true" : undefined} title={tooltip} onClick={() => onSelect(machine.id, pane.pane_id)}>
         {/* a saved roster's state is not news: a PC that is away says nothing about its agents */}
-        <AgentRowBody mark={mark} markKind={markKind} title={title} name={name} context={context} backgroundTasks={online ? pane.background_tasks : 0} plan={online ? pane.plan : undefined} status={online ? activity.status(machine.id, pane) : undefined} />
+        <AgentRowBody mark={mark} markKind={markKind} title={title} name={name} context={context} metadata={metadata} backgroundTasks={online ? pane.background_tasks : 0} plan={online ? pane.plan : undefined} status={online ? activity.status(machine.id, pane) : undefined} />
       </button>
       {settings.agentPins && <button type="button" className={`agent-pin-toggle${isPinned ? " is-pinned" : ""}`} aria-label={`${t("Pin agent")}: ${[title, machineName(machine), workspace.label].filter(Boolean).join(" · ")}`} aria-pressed={isPinned} title={t(isPinned ? "Unpin agent" : "Pin agent")} data-pin-key={pinKey} onClick={(event) => setPin(pinKey, event.currentTarget)}>
         <Star aria-hidden="true" fill={isPinned ? "currentColor" : "none"} />

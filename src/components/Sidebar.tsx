@@ -23,6 +23,8 @@ import { useMediaQuery } from "../lib/useMediaQuery.ts";
 import { useWorktreeBranches } from "../lib/useWorktreeBranches.ts";
 import { watchTouchReorder } from "../lib/touchReorder.ts";
 import { worktreeLabel } from "../lib/worktreeName.ts";
+import { metadataLines } from "../lib/sidebarMetadata.ts";
+import { useSidebarLayout } from "../lib/sidebarLayout.ts";
 import { paneMark, sidebarAgents, workspaceAgentLabels } from "../lib/sidebarAgents.ts";
 import { PANE_DRAG_TYPE, paneDragData } from "../lib/split.ts";
 
@@ -172,6 +174,8 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
   const t = useT();
   const { settings } = useSettings();
   const twoLine = settings.sidebarRows === "two";
+  // the metadata lines herdr's sidebar draws for a workspace, under the user's herdr layout
+  const layout = useSidebarLayout();
   const machineId = useMachineId();
   // a DONE looked at here reads as ready with Quiet opened finishes on (lib/sidebarActivity.tsx)
   const activity = useSidebarActivity();
@@ -538,6 +542,12 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
     const lines = twoLine ? taskRowLines({ paneTitle: displayPaneTitle(pane), labelled: Boolean(pane.label?.trim()), folder: cwdBasename(pane.cwd), workspace: rowTitle, alias: secondaryBranch }) : null;
     // a folded group still shows the checkout that is open; the count is of the ones put away
     const foldedCount = collapsed ? children.filter((child) => !roster.some((candidate) => candidate.workspace_id === child.workspace_id && candidate.pane_id === selectedPaneId)).length : 0;
+    const metadata = metadataLines(layout.spaces, workspace.tokens).map((line, index) => <span className="sidebar-metadata" key={index}>{line}</span>);
+    const oneLineName = <>
+      <span className="workspace-name">{rowTitle}</span>
+      {secondaryBranch && <span className="worktree-workspace-label">{secondaryBranch}</span>}
+      {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
+    </>;
     const editingWorkspace = editingWorkspaceId === workspace.workspace_id;
     const menuOpen = menu?.workspace.workspace_id === workspace.workspace_id;
     const contentsId = `${rosterId}-worktrees-${encodeURIComponent(repoKey ?? workspace.workspace_id)}`;
@@ -551,7 +561,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
       onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
       onDrop={(event) => onDrop(event, workspace.workspace_id)}
     >
-      <div className="workspace-header"
+      <div className={`workspace-header${metadata.length > 0 ? " has-metadata" : ""}`}
         onMouseDownCapture={(event) => { if ((event.button === 2 || (event.button === 0 && event.ctrlKey)) && !(event.target as HTMLElement).closest("input")) event.preventDefault(); }}
         onContextMenu={(event) => onRowContextMenu(event, toggleMenu)}>
         {/* a workspace leads with its folder, which is the fold when linked worktrees sit under it */}
@@ -606,11 +616,11 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions }: SidebarPr
               {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
             </span>
             {lines.place && <span className="workspace-place">{lines.place}</span>}
-          </span> : <span className="workspace-copy">
-            <span className="workspace-name">{rowTitle}</span>
-            {secondaryBranch && <span className="worktree-workspace-label">{secondaryBranch}</span>}
-            {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
-          </span>}
+            {metadata}
+          </span> : metadata.length > 0 ? <span className="workspace-copy is-two-line">
+            <span className="workspace-line">{oneLineName}</span>
+            {metadata}
+          </span> : <span className="workspace-copy">{oneLineName}</span>}
           <span className="sidebar-pane-meta">
             <span className="visually-hidden">{markName(pane)}</span>
             {online && pane.restore_error ? <RestoreErrorBadge reason={pane.restore_error} /> : <StatusBadge compact status={online ? rollupStatus(statusPanes.map((candidate) => activity.status(machineId, candidate))) : undefined} />}
