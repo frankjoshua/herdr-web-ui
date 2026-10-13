@@ -277,9 +277,10 @@ export function App() {
   // App picked the selected pane itself because the one selected closed: it must not raise a
   // phone's keyboard (over the drawer the close was tapped in) until the user picks a pane or lens
   const [autoSelected, setAutoSelected] = useState(false);
-  // the pane the user opened here (a pick, a tapped alert, Back), unlike one App picked itself at
-  // load or after a close: only that one tells herdr a finish was seen (components/ViewedPaneSeen.tsx)
-  const [opened, setOpened] = useState<SplitTarget | null>(null);
+  // the pane the user opened here (a pick, a tapped alert, Back, the address or the pane restored at
+  // load), unlike one App picked itself (herdr's focus, after a close): only that one tells herdr a
+  // finish was seen (components/ViewedPaneSeen.tsx)
+  const [opened, setOpened] = useState<SplitTarget | null>(() => selectedPaneId === null ? null : { machineId: selectedMachineId, paneId: selectedPaneId });
   // a phone opened by a link that says so starts with its drawer out (lib/deepLink.ts)
   const [drawerOpen, setDrawerOpen] = useState(() => initialLink?.sidebar === "shown" && window.matchMedia?.("(min-width: 769px)").matches !== true);
   const drawerOpenRef = useRef(drawerOpen); drawerOpenRef.current = drawerOpen;
@@ -758,6 +759,7 @@ export function App() {
         setLinkLanded(true);
         if (landed.note) setHeaderNote(landed.note);
         if (landed.pane) {
+          setOpened({ machineId: linked.machine, paneId: landed.pane });
           if (landed.pane !== selectedPaneId) {
             setSelectedPaneId(landed.pane);
             // the link's lens was for its own pane: the one opened instead keeps its own
